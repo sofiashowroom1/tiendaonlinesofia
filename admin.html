@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Control Privado</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-auth-compat.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap');
+        body { font-family: 'Montserrat', sans-serif; background-color: #222; color: #fff; margin: 0; padding: 20px; }
+        header { text-align: center; margin-bottom: 20px; position: relative;}
+        header h1 { color: #ffb3ba; margin: 0;}
+        .enlace-tienda { display: inline-block; margin-top: 10px; color: #aaa; text-decoration: none; border-bottom: 1px solid #aaa; padding-bottom: 2px;}
+        .enlace-tienda:hover { color: white; border-color: white;}
+        
+        /* PANTALLA DE LOGIN */
+        .login-box { max-width: 400px; margin: 100px auto; background: #333; padding: 40px; border-radius: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); text-align: center; border-top: 5px solid #ffb3ba;}
+        .login-box h2 { margin-top: 0; color: #ffb3ba; margin-bottom: 25px;}
+        .login-box input { width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 5px; border: none; font-family: 'Montserrat'; box-sizing: border-box; background: #eee;}
+        
+        /* PANEL DE ADMINISTRACIÓN */
+        .stats-container { max-width: 1300px; margin: 0 auto 20px auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
+        .stat-card { background: #333; padding: 20px; border-radius: 10px; border-left: 5px solid #ffb3ba; text-align: center;}
+        .stat-card h4 { margin: 0; color: #aaa; font-weight: 400; font-size: 0.9rem; text-transform: uppercase;}
+        .stat-card p { margin: 10px 0 0 0; font-size: 2rem; font-weight: 700; color: #fff; }
+
+        .admin-section { max-width: 1300px; margin: auto; padding: 30px; background: #333; border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .admin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; align-items: start;}
+        @media (max-width: 900px) { .admin-grid { grid-template-columns: 1fr; } }
+        .admin-card { background: #444; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+        h3 { margin-top: 0; color: #ffb3ba; border-bottom: 1px solid #555; padding-bottom: 10px;}
+        
+        .form-grid { display: grid; grid-template-columns: 1fr; gap: 15px; margin-bottom: 15px; }
+        .form-grid input, .form-grid select { padding: 12px; border-radius: 5px; border: none; font-family: 'Montserrat', sans-serif; background: #eee; color: #333; }
+        .btn-accion { background-color: #ffb3ba; color: #333; border: none; padding: 12px 15px; border-radius: 5px; font-weight: bold; cursor: pointer; transition: background 0.3s; text-transform: uppercase;}
+        .btn-accion:hover { background-color: #ffc2c9; }
+        
+        .lista-admin-items { max-height: 500px; overflow-y: auto; padding-right: 10px;}
+        .admin-item { display: flex; justify-content: space-between; align-items: center; background: #555; padding: 15px; margin-bottom: 10px; border-radius: 5px; border-left: 4px solid #ffb3ba;}
+        .admin-item.agotado { border-left-color: #e74c3c; opacity: 0.7;}
+        .admin-item-btns button { padding: 8px 12px; border: none; border-radius: 3px; cursor: pointer; margin-left: 5px; font-weight: bold; font-family: 'Montserrat', sans-serif;}
+        .btn-edit { background-color: #f1c40f; color: #333; }
+        .btn-del { background-color: #e74c3c; color: white; }
+        .etiqueta-oferta { background: #e74c3c; color: white; padding: 2px 6px; border-radius: 3px; font-size: 0.7rem; margin-left: 5px; font-weight: bold;}
+        
+        .cat-box { background: #555; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
+        .cat-header { display: flex; justify-content: space-between; margin-bottom: 10px; align-items: center; }
+        .cat-title { color: #ffb3ba; font-size: 1.1rem; text-transform: uppercase; font-weight: bold; }
+        .cat-delete-btn { background: #e74c3c; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold;}
+        .tags-categorias { display: flex; flex-wrap: wrap; gap: 8px; }
+        .tag-cat { background: #333; padding: 5px 10px; border-radius: 15px; font-size: 0.85rem; display: flex; align-items: center; gap: 5px;}
+        .tag-cat button { background: none; border: none; color: #ffb3ba; cursor: pointer; font-weight: bold;}
+        .subcat-input-group { display: flex; gap: 10px; margin-top: 10px;}
+        .subcat-input { padding: 8px; flex: 1; border-radius: 4px; border: none; font-family: 'Montserrat', sans-serif; background: #eee; }
+        .subcat-add-btn { background: #333; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold;}
+
+        .pedido-card { background: #555; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 5px solid #2ecc71; }
+        .pedido-header { display: flex; justify-content: space-between; border-bottom: 1px solid #666; padding-bottom: 10px; margin-bottom: 10px;}
+        .pedido-fecha { font-size: 0.85rem; color: #ccc; }
+        .pedido-cliente { font-size: 1rem; margin: 5px 0; color: #fff;}
+        .pedido-datos { font-size: 0.85rem; color: #ddd; margin-bottom: 15px; line-height: 1.4;}
+        .pedido-item-detalle { display: flex; align-items: center; border-bottom: 1px solid #555; padding: 10px 0; gap: 15px; }
+        .pedido-item-img { width: 40px; height: 50px; object-fit: cover; border-radius: 3px;}
+        .pedido-item-info strong { font-size: 0.9rem; display: block; color: #fff;}
+        .pedido-item-info span { color: #ccc; font-size: 0.8rem;}
+        .pedido-item-cant { font-weight: bold; color: #ffb3ba; font-size: 0.95rem;}
+        .pedido-total { font-weight: bold; font-size: 1.1rem; color: #2ecc71; text-align: right; margin-top:10px;}
+        .btn-borrar-pedido { background: #e74c3c; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; font-size: 0.8rem;}
+        
+        .conexion-status { position: fixed; top: 10px; right: 10px; background: #f1c40f; color: #333; padding: 5px 10px; border-radius: 5px; font-weight: bold; font-size: 0.8rem; z-index: 1000;}
+        .tabla-var-container { background: #eee; padding: 15px; border-radius: 5px; margin-bottom: 15px; }
+        .btn-logout { position: absolute; top: 10px; right: 40px; background: #e74c3c; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; font-family: 'Montserrat';}
+    </style>
+</head>
+<body>
+
+    <div id="login-container" class="login-box">
+        <h2>🔒 Panel de Acceso</h2>
+        <input type="email" id="login-email" placeholder="Tu correo electrónico">
+        <input type="password" id="login-password" placeholder="Tu contraseña">
+        <button class="btn-accion" style="width: 100%;" onclick="login()">Iniciar Sesión</button>
+    </div>
+
+    <div id="admin-container" style="display: none;">
+        <div class="conexion-status" id="estado-nube">Conectando... ☁️</div>
+
+        <header>
+            <h1>⚙️ Tu Centro de Control</h1>
+            <button class="btn-logout" onclick="logout()">Cerrar Sesión ➔</button>
+            <a href="index.html" class="enlace-tienda" target="_blank">Ir a ver la tienda ➔</a>
+        </header>
+
+        <div class="stats-container">
+            <div class="stat-card"><h4>Pedidos Pendientes</h4><p id="stat-pedidos">0</p></div>
+            <div class="stat-card" style="border-left-color: #2ecc71;"><h4>Ingresos (Pendientes)</h4><p id="stat-ingresos">$0</p></div>
+            <div class="stat-card" style="border-left-color: #f1c40f;"><h4>Prendas en Catálogo</h4><p id="stat-prendas">0</p></div>
+        </div>
+
+        <section class="admin-section">
+            <div class="admin-grid">
+                <div>
+                    <div class="admin-card">
+                        <h3 id="titulo-form-producto">Cargar Prenda al Catálogo</h3>
+                        <form id="form-producto" onsubmit="guardarProducto(event)">
+                            <input type="hidden" id="admin-id">
+                            <div class="form-grid">
+                                <input type="text" id="admin-nombre" placeholder="Nombre de la prenda (ej: Top Jazmín)" required>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                                    <input type="number" id="admin-precio" placeholder="Precio ($)" required>
+                                    <input type="number" id="admin-descuento" placeholder="Desc. % (Opcional)">
+                                </div>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                                    <select id="admin-categoria" onchange="actualizarSelectSubcategorias()" required></select>
+                                    <select id="admin-subcategoria"><option value="">Sin subcategoría</option></select>
+                                </div>
+                                <input type="text" id="admin-talles" placeholder="Talles (Ej: S, M, L)" oninput="generarTablaVariantes()" required>
+                                <input type="text" id="admin-colores" placeholder="Colores (Ej: Negro, Bordo)" oninput="generarTablaVariantes()" required>
+                                
+                                <div id="tabla-variantes" class="tabla-var-container">
+                                    <small style="color: #666;">Escribe los talles y colores arriba para asignar el stock...</small>
+                                </div>
+
+                                <label style="font-size: 0.8rem; color:#aaa;">Sube una o varias fotos:</label>
+                                <input type="file" id="admin-foto" accept="image/*" multiple>
+                                <button type="submit" class="btn-accion" id="btn-submit-form">Guardar en Internet</button>
+                                <button type="button" onclick="cancelarEdicion()" style="margin-top:5px; padding:10px; border-radius:5px; border:none; cursor:pointer; background:#777; color:white;">Cancelar Edición</button>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <div class="admin-card">
+                        <h3>Datos Generales y Contacto</h3>
+                        <div class="form-grid">
+                            <input type="text" id="conf-nombre" placeholder="Nombre de tu Tienda">
+                            <input type="number" id="conf-wa" placeholder="WhatsApp (Ej: 5493863509500)">
+                            <input type="url" id="conf-ig" placeholder="Enlace de Instagram">
+                            <button class="btn-accion" onclick="guardarConfiguracion()">Guardar Configuración</button>
+                        </div>
+                    </div>
+
+                    <div class="admin-card">
+                        <h3>Gestión de Categorías y Subcategorías</h3>
+                        <div class="form-grid" style="grid-template-columns: 3fr 1fr; gap: 10px;">
+                            <input type="text" id="nueva-categoria" placeholder="Categoría Principal (Ej: Jeans)">
+                            <button class="btn-accion" onclick="agregarCategoria()">Crear</button>
+                        </div>
+                        <div id="contenedor-categorias" style="margin-top: 20px;"></div>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="admin-card">
+                        <h3>📦 Pedidos de Clientes (En Vivo)</h3>
+                        <div class="lista-admin-items" id="lista-pedidos"></div>
+                    </div>
+
+                    <div class="admin-card">
+                        <h3>Tu Stock Subido</h3>
+                        <div class="lista-admin-items" id="lista-admin"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyDW-fpfNL4Wd1A_NZ7huwhWEYG_I9qm_yE",
+            authDomain: "tienda-online-sofia.firebaseapp.com",
+            databaseURL: "https://tienda-online-sofia-default-rtdb.firebaseio.com",
+            projectId: "tienda-online-sofia",
+            storageBucket: "tienda-online-sofia.firebasestorage.app",
+            messagingSenderId: "288761044413",
+            appId: "1:288761044413:web:eedfe49c7dd23126b206d4"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        const auth = firebase.auth();
+
+        let configTienda = { nombre: "", whatsapp: "", instagram: "" };
+        let stock = [];
+        let categoriasObj = {};
+        let listaPedidos = [];
+        let variantesActuales = {};
+
+        // --- SISTEMA DE CONTROL DE ACCESO (AUTH) ---
+        auth.onAuthStateChanged(user => {
+            const loginUI = document.getElementById('login-container');
+            const adminUI = document.getElementById('admin-container');
+
+            if (user) {
+                // Si está logueado, mostramos el panel y cargamos los datos
+                loginUI.style.display = 'none';
+                adminUI.style.display = 'block';
+                conectarBaseDatos();
+            } else {
+                // Si no, lo mandamos de vuelta a la pantalla de login
+                loginUI.style.display = 'block';
+                adminUI.style.display = 'none';
+            }
+        });
+
+        function login() {
+            const email = document.getElementById('login-email').value;
+            const pass = document.getElementById('login-password').value;
+
+            auth.signInWithEmailAndPassword(email, pass).catch(error => {
+                alert("⚠️ Error al entrar: Revisa que tu correo y contraseña sean correctos.");
+            });
+        }
+
+        function logout() {
+            auth.signOut();
+        }
+
+        // --- CONEXIÓN DE DATOS (Solo arranca si estás logueado) ---
+        function conectarBaseDatos() {
+            db.ref('.info/connected').on('value', snap => {
+                const status = document.getElementById('estado-nube');
+                if (snap.val() === true) {
+                    status.innerText = "¡Conectado a Internet! 🟢";
+                    status.style.background = "#2ecc71"; status.style.color = "white";
+                } else {
+                    status.innerText = "Desconectado... 🔴";
+                    status.style.background = "#e74c3c";
+                }
+            });
+
+            db.ref('config').on('value', snap => {
+                if(snap.exists()) {
+                    configTienda = snap.val();
+                    document.getElementById('conf-nombre').value = configTienda.nombre || "";
+                    document.getElementById('conf-wa').value = configTienda.whatsapp || "";
+                    document.getElementById('conf-ig').value = configTienda.instagram || "";
+                }
+            });
+
+            db.ref('categoriasObj').on('value', snap => {
+                if(snap.exists()) { categoriasObj = snap.val(); } else { categoriasObj = {}; }
+                actualizarListaCategorias();
+            });
+
+            db.ref('stock').on('value', snap => {
+                const data = snap.val();
+                stock = data ? (Array.isArray(data) ? data : Object.values(data)) : [];
+                actualizarListaAdmin();
+            });
+
+            db.ref('pedidos').on('value', snap => {
+                const data = snap.val();
+                listaPedidos = [];
+                if(data) {
+                    for(let key in data) {
+                        let p = data[key]; p.firebaseKey = key; listaPedidos.push(p);
+                    }
+                }
+                listaPedidos.sort((a,b) => b.id - a.id); 
+                actualizarHistorialPedidos();
+                actualizarEstadisticas();
+            });
+        }
+
+        // --- SISTEMA DE VARIANTES ---
+        function generarTablaVariantes() {
+            const tallesStr = document.getElementById('admin-talles').value;
+            const coloresStr = document.getElementById('admin-colores').value;
+            const container = document.getElementById('tabla-variantes');
+
+            const talles = tallesStr.split(',').map(t=>t.trim()).filter(t=>t!=="");
+            const colores = coloresStr.split(',').map(c=>c.trim()).filter(c=>c!=="");
+
+            if(talles.length === 0 || colores.length === 0) {
+                container.innerHTML = '<small style="color: #666;">Escribe los talles y colores arriba para asignar el stock...</small>';
+                return;
+            }
+
+            let html = '<label style="font-size: 0.8rem; color:#333; font-weight:bold;">Stock exacto por Combinación:</label><div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:10px;">';
+            colores.forEach(color => {
+                talles.forEach(talle => {
+                    let key = `${color}-${talle}`;
+                    let stockPrevio = variantesActuales[key] || 0;
+                    html += `
+                    <div style="display:flex; justify-content:space-between; align-items:center; background:#fff; padding:8px 10px; border-radius:5px; border:1px solid #ccc;">
+                        <span style="font-size:0.85rem; color:#333; font-weight:600;">${color} <span style="color:#aaa;">|</span> ${talle}</span>
+                        <input type="number" value="${stockPrevio}" min="0" style="width:60px; padding:5px; border:1px solid #ccc; border-radius:3px; font-family:'Montserrat';" oninput="actualizarVar('${key}', this.value)">
+                    </div>`;
+                });
+            });
+            html += '</div>'; container.innerHTML = html;
+        }
+
+        function actualizarVar(key, val) { variantesActuales[key] = parseInt(val) || 0; }
+
+        function guardarConfiguracion() {
+            const data = {
+                nombre: document.getElementById('conf-nombre').value,
+                whatsapp: document.getElementById('conf-wa').value,
+                instagram: document.getElementById('conf-ig').value
+            };
+            db.ref('config').set(data).then(() => alert("¡Configuración guardada en la nube!"));
+        }
+
+        function guardarProducto(event) {
+            event.preventDefault(); 
+            const idEditando = document.getElementById('admin-id').value;
+            const nombre = document.getElementById('admin-nombre').value;
+            const precio = parseFloat(document.getElementById('admin-precio').value);
+            let descuento = parseFloat(document.getElementById('admin-descuento').value) || 0; 
+            const categoria = document.getElementById('admin-categoria').value;
+            const subcategoria = document.getElementById('admin-subcategoria').value;
+            const talles = document.getElementById('admin-talles').value.split(',').map(t => t.trim()).filter(t=>t!=="");
+            const colores = document.getElementById('admin-colores').value.split(',').map(c => c.trim()).filter(c=>c!=="");
+            const archivos = document.getElementById('admin-foto').files;
+
+            const procesarGuardado = (arrayImagenes) => {
+                let arrVariantes = []; let stockTotal = 0;
+                colores.forEach(c => {
+                    talles.forEach(t => {
+                        let qty = variantesActuales[`${c}-${t}`] || 0;
+                        arrVariantes.push({ color: c, talle: t, stock: qty });
+                        stockTotal += qty;
+                    });
+                });
+
+                const productoData = {
+                    id: idEditando ? parseInt(idEditando) : Date.now(),
+                    nombre, precio, descuento, stock: stockTotal, categoria, subcategoria, 
+                    talles, colores, variantes: arrVariantes, imagenes: arrayImagenes
+                };
+                if (idEditando) {
+                    const index = stock.findIndex(p => p.id == idEditando); stock[index] = productoData;
+                } else { stock.push(productoData); }
+                
+                db.ref('stock').set(stock).then(() => {
+                    cancelarEdicion(); alert("¡Prenda guardada en internet!");
+                });
+            };
+
+            if (archivos.length > 0) {
+                let promesas = [];
+                for(let i = 0; i < archivos.length; i++) {
+                    promesas.push(new Promise(resolve => {
+                        let lector = new FileReader(); lector.onload = e => resolve(e.target.result); lector.readAsDataURL(archivos[i]);
+                    }));
+                }
+                Promise.all(promesas).then(arrayImagenes => procesarGuardado(arrayImagenes));
+            } else {
+                if (idEditando) procesarGuardado(stock.find(p => p.id == idEditando).imagenes);
+                else alert("⚠️ Tienes que subir al menos una foto.");
+            }
+        }
+
+        // --- RESTO DE FUNCIONES DE CONTROL ---
+        function actualizarListaCategorias() {
+            const selectCat = document.getElementById('admin-categoria');
+            selectCat.innerHTML = '<option value="">Selecciona Categoría...</option>';
+            for(let cat in categoriasObj) { selectCat.innerHTML += `<option value="${cat}">${cat.charAt(0).toUpperCase() + cat.slice(1)}</option>`; }
+            actualizarSelectSubcategorias(); 
+            const contenedor = document.getElementById('contenedor-categorias'); contenedor.innerHTML = '';
+            for(let cat in categoriasObj) {
+                let subsVisibles = categoriasObj[cat].filter(s => s !== "");
+                let subsHTML = subsVisibles.map(sub => {
+                    let idxReal = categoriasObj[cat].indexOf(sub);
+                    return `<span class="tag-cat">${sub} <button onclick="eliminarSubcategoria('${cat}', ${idxReal})">✖</button></span>`;
+                }).join('');
+                contenedor.innerHTML += `<div class="cat-box"><div class="cat-header"><span class="cat-title">${cat}</span><button class="cat-delete-btn" onclick="eliminarCategoria('${cat}')">Borrar</button></div><div class="tags-categorias">${subsHTML}</div><div class="subcat-input-group"><input type="text" id="nueva-sub-${cat}" class="subcat-input" placeholder="Agregar subcategoría"><button class="subcat-add-btn" onclick="agregarSubcategoria('${cat}')">Añadir</button></div></div>`;
+            }
+        }
+        function actualizarSelectSubcategorias() {
+            const cat = document.getElementById('admin-categoria').value; const selectSub = document.getElementById('admin-subcategoria'); selectSub.innerHTML = '<option value="">Sin subcategoría</option>';
+            if (cat && categoriasObj[cat]) { categoriasObj[cat].filter(s => s !== "").forEach(sub => selectSub.innerHTML += `<option value="${sub}">${sub}</option>`); }
+        }
+        function agregarCategoria() {
+            const input = document.getElementById('nueva-categoria'); const valor = input.value.trim().toLowerCase();
+            if(valor && !categoriasObj[valor]) { categoriasObj[valor] = [""]; db.ref('categoriasObj').set(categoriasObj); input.value = ''; }
+        }
+        function eliminarCategoria(cat) { if(confirm(`¿Eliminar la categoría ${cat}?`)) { delete categoriasObj[cat]; db.ref('categoriasObj').set(categoriasObj); } }
+        function agregarSubcategoria(cat) {
+            const input = document.getElementById(`nueva-sub-${cat}`); const valor = input.value.trim();
+            if(valor && !categoriasObj[cat].includes(valor)) {
+                if (categoriasObj[cat].length === 1 && categoriasObj[cat][0] === "") { categoriasObj[cat] = []; }
+                categoriasObj[cat].push(valor); db.ref('categoriasObj').set(categoriasObj); input.value = '';
+            }
+        }
+        function eliminarSubcategoria(cat, index) {
+            categoriasObj[cat].splice(index, 1); if(categoriasObj[cat].length === 0) { categoriasObj[cat] = [""]; } db.ref('categoriasObj').set(categoriasObj);
+        }
+        function actualizarEstadisticas() {
+            let ingresos = listaPedidos.reduce((sum, p) => sum + p.total, 0);
+            document.getElementById('stat-pedidos').innerText = listaPedidos.length; document.getElementById('stat-ingresos').innerText = `$${ingresos.toLocaleString('es-AR')}`; document.getElementById('stat-prendas').innerText = stock.length;
+        }
+        function actualizarHistorialPedidos() {
+            const contenedor = document.getElementById('lista-pedidos'); if (listaPedidos.length === 0) { contenedor.innerHTML = '<p style="color:#aaa;">No hay pedidos recientes.</p>'; return; }
+            contenedor.innerHTML = '';
+            listaPedidos.forEach(pedido => {
+                let itemsHTML = '';
+                if(pedido.items) {
+                    pedido.items.forEach(item => {
+                        let imgTag = (item.imagen) ? `<img src="${item.imagen}" class="pedido-item-img">` : '';
+                        itemsHTML += `<div class="pedido-item-detalle">${imgTag}<div class="pedido-item-info"><strong>${item.nombre}</strong><span>Talle: ${item.talle} | ${item.color}</span></div><div class="pedido-item-cant">x${item.cantidad}</div></div>`;
+                    });
+                }
+                contenedor.innerHTML += `<div class="pedido-card"><div class="pedido-header"><span>📅 ${pedido.fecha}</span><button class="btn-borrar-pedido" onclick="eliminarPedido('${pedido.firebaseKey}')">Entregado ✖</button></div><h4 class="pedido-cliente">👤 ${pedido.cliente.nombre} (${pedido.cliente.telefono})</h4><div class="pedido-datos">📍 ${pedido.cliente.domicilio} | 💳 ${pedido.cliente.pago}</div><div>${itemsHTML}</div><div class="pedido-total">Total: $${pedido.total.toLocaleString('es-AR')}</div></div>`;
+            });
+        }
+        function eliminarPedido(firebaseKey) { if(confirm("¿Marcar como entregado?")) { db.ref('pedidos/' + firebaseKey).remove(); } }
+        function actualizarListaAdmin() {
+            const lista = document.getElementById('lista-admin'); lista.innerHTML = ''; if(stock.length === 0) { lista.innerHTML = `<p style="color:#aaa;">Aún no has subido ropa.</p>`; return; }
+            stock.forEach(prod => {
+                let badgeOferta = prod.descuento > 0 ? `<span class="etiqueta-oferta">${prod.descuento}% OFF</span>` : '';
+                let textoStock = prod.stock > 0 ? `<span style="color:#2ecc71;">Stock Gral: ${prod.stock}</span>` : `<span style="color:#e74c3c; font-weight:bold;">AGOTADO</span>`;
+                lista.innerHTML += `<div class="admin-item"><div><strong style="font-size:1.1rem; display:block; margin-bottom:5px;">${prod.nombre} ${badgeOferta}</strong><small style="color:#ddd;">$${prod.precio} | Cat: ${prod.categoria}</small><br><small>${textoStock}</small></div><div class="admin-item-btns"><button class="btn-edit" onclick="prepararEdicion(${prod.id})">✏️</button><button class="btn-del" onclick="eliminarProducto(${prod.id})">🗑️</button></div></div>`;
+            });
+            actualizarEstadisticas();
+        }
+        function prepararEdicion(id) {
+            const prod = stock.find(p => p.id === id); document.getElementById('admin-id').value = prod.id; document.getElementById('admin-nombre').value = prod.nombre; document.getElementById('admin-precio').value = prod.precio; document.getElementById('admin-descuento').value = prod.descuento || ""; document.getElementById('admin-categoria').value = prod.categoria; actualizarSelectSubcategorias(); document.getElementById('admin-subcategoria').value = prod.subcategoria || ""; document.getElementById('admin-talles').value = (prod.talles || []).join(', '); document.getElementById('admin-colores').value = (prod.colores || []).join(', ');
+            variantesActuales = {}; if(prod.variantes) { prod.variantes.forEach(v => { variantesActuales[`${v.color}-${v.talle}`] = v.stock; }); } generarTablaVariantes();
+            document.getElementById('titulo-form-producto').innerText = "Editando: " + prod.nombre; document.getElementById('btn-submit-form').innerText = "Actualizar en Internet"; window.scrollTo(0, 0); 
+        }
+        function cancelarEdicion() {
+            document.getElementById('form-producto').reset(); document.getElementById('admin-id').value = ""; document.getElementById('titulo-form-producto').innerText = "Cargar Prenda al Catálogo"; document.getElementById('btn-submit-form').innerText = "Guardar en Internet"; variantesActuales = {}; document.getElementById('tabla-variantes').innerHTML = '<small style="color: #666;">Escribe los talles y colores arriba...</small>'; actualizarSelectSubcategorias();
+        }
+        function eliminarProducto(id) { if(confirm("¿Borrar prenda de internet?")) { stock = stock.filter(p => p.id !== id); db.ref('stock').set(stock); } }
+    </script>
+</body>
+</html>
