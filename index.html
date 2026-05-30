@@ -35,7 +35,7 @@
         .barra-filtros input { width: 300px; max-width: 100%;}
         .barra-filtros input:focus, .barra-filtros select:focus { border-color: #ffb3ba; box-shadow: 0 0 5px rgba(255,179,186,0.5);}
 
-        .main-container { flex-grow: 1; display: flex; max-width: 1300px; margin: auto; padding: 30px 20px; gap: 20px; justify-content: center; width: 100%; box-sizing: border-box;}
+        .main-container { flex-grow: 1; display: flex; max-width: 1300px; margin: auto; padding: 30px 20px; gap: 20px; justify-content: center; width: 100%; box-sizing: border-box; min-height: 400px;}
         .productos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 30px; width: 100%; }
         
         .producto { position: relative; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05); text-align: center; display: flex; flex-direction: column; justify-content: space-between; transition: transform 0.3s;}
@@ -103,6 +103,11 @@
         .link-social:hover { background-color: #ffb3ba; transform: translateY(-3px);}
         .link-social svg { width: 22px; height: 22px; fill: #555; transition: fill 0.3s;}
         .link-social:hover svg { fill: white; }
+
+        /* Estilo para el indicador de carga */
+        .loader-container { width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 50px 0; color: #aaa; }
+        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #ffb3ba; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 15px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
@@ -126,7 +131,12 @@
     </div>
 
     <div class="main-container">
-        <div class="productos-grid" id="catalogo"></div>
+        <div class="productos-grid" id="catalogo">
+            <div class="loader-container">
+                <div class="spinner"></div>
+                <p>Cargando catálogo...</p>
+            </div>
+        </div>
     </div>
 
     <div class="overlay" id="overlay" onclick="toggleCarrito()"></div>
@@ -198,6 +208,7 @@
         let filtroCat = 'todas';
         let filtroSub = 'todas';
         let indicesCarrusel = {};
+        let datosCargados = false;
 
         db.ref('config').on('value', (snap) => {
             if(snap.exists()) {
@@ -223,6 +234,7 @@
         db.ref('stock').on('value', (snap) => {
             const data = snap.val();
             stock = data ? (Array.isArray(data) ? data : Object.values(data)) : [];
+            datosCargados = true;
             procesarFiltros();
         });
 
@@ -264,6 +276,8 @@
         }
 
         function procesarFiltros() {
+            if (!datosCargados) return;
+
             let termino = document.getElementById('buscador-input').value.toLowerCase().trim();
             let orden = document.getElementById('orden-select').value;
             
@@ -305,7 +319,6 @@
             elementoClicked.classList.add('seleccionado');
             document.getElementById(`selected-color-${idProducto}`).value = colorNombre;
 
-            // ACTUALIZAR SELECT PARA MOSTRAR SOLO TALLES CON STOCK > 0
             const producto = stock.find(p => p.id === idProducto);
             if(producto && producto.variantes) {
                 const selectTalle = document.getElementById(`talle-${idProducto}`);
@@ -322,8 +335,9 @@
         function mostrarProductos(productos) {
             const contenedor = document.getElementById('catalogo');
             contenedor.innerHTML = ''; 
+            
             if(productos.length === 0) {
-                contenedor.innerHTML = `<p style="grid-column: 1/-1; text-align:center; color:#888;">No hay productos con esos filtros.</p>`;
+                contenedor.innerHTML = `<p style="grid-column: 1/-1; text-align:center; color:#888; margin-top:50px;">No hay productos con esos filtros.</p>`;
                 return;
             }
 
@@ -336,7 +350,8 @@
                     inicializarCarrusel(prod.id, numFotos);
                     prod.imagenes.forEach((imgBase64, idx) => {
                         let claseActiva = idx === 0 ? 'activa' : '';
-                        fotosHTML += `<img src="${imgBase64}" class="img-carrusel-${prod.id} ${claseActiva}">`;
+                        // Se agrega loading="lazy" para evitar que el navegador cargue todo de golpe
+                        fotosHTML += `<img src="${imgBase64}" class="img-carrusel-${prod.id} ${claseActiva}" loading="lazy">`;
                     });
                 } else { fotosHTML = `<img src="" alt="Sin foto" class="activa">`; }
 
@@ -345,7 +360,6 @@
                     <button class="carrusel-btn next" onclick="moverCarrusel(${prod.id}, 1, ${numFotos})">&#10095;</button>
                 ` : '';
 
-                // NUEVA LÓGICA: FILTRAR COLORES QUE TENGAN STOCK
                 let coloresConStock = [];
                 if (prod.variantes) {
                     coloresConStock = (prod.colores || []).filter(c => {
@@ -353,12 +367,11 @@
                         return stockColor > 0;
                     });
                 } else {
-                    coloresConStock = prod.colores || []; // Fallback por si la prenda es vieja
+                    coloresConStock = prod.colores || [];
                 }
 
                 const colorPorDefecto = coloresConStock.length > 0 ? coloresConStock[0] : "";
                 
-                // Generar los talles iniciales solo si tienen stock
                 let opcionesTalles = '';
                 if(prod.variantes && colorPorDefecto) {
                     (prod.talles || []).forEach(t => {
@@ -372,7 +385,6 @@
                     opcionesTalles = `<option value="">Agotado</option>`;
                 }
 
-                // Generar swatches solo de los colores con stock
                 let circulitos = coloresConStock.map((c, index) => {
                     let hex = coloresCodigo[c.toLowerCase().trim()] || "#e0e0e0";
                     let claseSel = index === 0 ? " seleccionado" : ""; 
@@ -516,8 +528,6 @@
             
             window.open(`https://api.whatsapp.com/send?phone=${configTienda.whatsapp}&text=${encodeURIComponent(mensaje)}`, '_blank');
         }
-
-        window.onload = inicializarTienda;
     </script>
 </body>
 </html>
