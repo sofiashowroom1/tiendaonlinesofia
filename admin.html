@@ -17,12 +17,10 @@
         .enlace-tienda { display: inline-block; margin-top: 10px; color: #aaa; text-decoration: none; border-bottom: 1px solid #aaa; padding-bottom: 2px;}
         .enlace-tienda:hover { color: white; border-color: white;}
         
-        /* PANTALLA DE LOGIN */
         .login-box { max-width: 400px; margin: 100px auto; background: #333; padding: 40px; border-radius: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); text-align: center; border-top: 5px solid #ffb3ba;}
         .login-box h2 { margin-top: 0; color: #ffb3ba; margin-bottom: 25px;}
         .login-box input { width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 5px; border: none; font-family: 'Montserrat'; box-sizing: border-box; background: #eee;}
         
-        /* PANEL DE ADMINISTRACIÓN */
         .stats-container { max-width: 1300px; margin: 0 auto 20px auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
         .stat-card { background: #333; padding: 20px; border-radius: 10px; border-left: 5px solid #ffb3ba; text-align: center;}
         .stat-card h4 { margin: 0; color: #aaa; font-weight: 400; font-size: 0.9rem; text-transform: uppercase;}
@@ -37,7 +35,8 @@
         .form-grid { display: grid; grid-template-columns: 1fr; gap: 15px; margin-bottom: 15px; }
         .form-grid input, .form-grid select { padding: 12px; border-radius: 5px; border: none; font-family: 'Montserrat', sans-serif; background: #eee; color: #333; }
         .btn-accion { background-color: #ffb3ba; color: #333; border: none; padding: 12px 15px; border-radius: 5px; font-weight: bold; cursor: pointer; transition: background 0.3s; text-transform: uppercase;}
-        .btn-accion:hover { background-color: #ffc2c9; }
+        .btn-accion:hover:not(:disabled) { background-color: #ffc2c9; }
+        .btn-accion:disabled { background-color: #555; color: #aaa; cursor: not-allowed; }
         
         .lista-admin-items { max-height: 500px; overflow-y: auto; padding-right: 10px;}
         .admin-item { display: flex; justify-content: space-between; align-items: center; background: #555; padding: 15px; margin-bottom: 10px; border-radius: 5px; border-left: 4px solid #ffb3ba;}
@@ -124,7 +123,7 @@
                                     <small style="color: #666;">Escribe los talles y colores arriba para asignar el stock...</small>
                                 </div>
 
-                                <label style="font-size: 0.8rem; color:#aaa;">Sube una o varias fotos:</label>
+                                <label style="font-size: 0.8rem; color:#aaa;">Sube una o varias fotos (Se comprimirán automáticamente):</label>
                                 <input type="file" id="admin-foto" accept="image/*" multiple>
                                 <button type="submit" class="btn-accion" id="btn-submit-form">Guardar en Internet</button>
                                 <button type="button" onclick="cancelarEdicion()" style="margin-top:5px; padding:10px; border-radius:5px; border:none; cursor:pointer; background:#777; color:white;">Cancelar Edición</button>
@@ -187,49 +186,32 @@
         let listaPedidos = [];
         let variantesActuales = {};
 
-        // --- SISTEMA DE CONTROL DE ACCESO (AUTH) ---
         auth.onAuthStateChanged(user => {
             const loginUI = document.getElementById('login-container');
             const adminUI = document.getElementById('admin-container');
-
             if (user) {
-                // Si está logueado, mostramos el panel y cargamos los datos
-                loginUI.style.display = 'none';
-                adminUI.style.display = 'block';
-                conectarBaseDatos();
+                loginUI.style.display = 'none'; adminUI.style.display = 'block'; conectarBaseDatos();
             } else {
-                // Si no, lo mandamos de vuelta a la pantalla de login
-                loginUI.style.display = 'block';
-                adminUI.style.display = 'none';
+                loginUI.style.display = 'block'; adminUI.style.display = 'none';
             }
         });
 
         function login() {
             const email = document.getElementById('login-email').value;
             const pass = document.getElementById('login-password').value;
-
-            auth.signInWithEmailAndPassword(email, pass).catch(error => {
-                alert("⚠️ Error al entrar: Revisa que tu correo y contraseña sean correctos.");
-            });
+            auth.signInWithEmailAndPassword(email, pass).catch(error => alert("⚠️ Credenciales incorrectas."));
         }
+        function logout() { auth.signOut(); }
 
-        function logout() {
-            auth.signOut();
-        }
-
-        // --- CONEXIÓN DE DATOS (Solo arranca si estás logueado) ---
         function conectarBaseDatos() {
             db.ref('.info/connected').on('value', snap => {
                 const status = document.getElementById('estado-nube');
                 if (snap.val() === true) {
-                    status.innerText = "¡Conectado a Internet! 🟢";
-                    status.style.background = "#2ecc71"; status.style.color = "white";
+                    status.innerText = "¡Conectado a Internet! 🟢"; status.style.background = "#2ecc71"; status.style.color = "white";
                 } else {
-                    status.innerText = "Desconectado... 🔴";
-                    status.style.background = "#e74c3c";
+                    status.innerText = "Desconectado... 🔴"; status.style.background = "#e74c3c";
                 }
             });
-
             db.ref('config').on('value', snap => {
                 if(snap.exists()) {
                     configTienda = snap.val();
@@ -238,74 +220,84 @@
                     document.getElementById('conf-ig').value = configTienda.instagram || "";
                 }
             });
-
             db.ref('categoriasObj').on('value', snap => {
                 if(snap.exists()) { categoriasObj = snap.val(); } else { categoriasObj = {}; }
                 actualizarListaCategorias();
             });
-
             db.ref('stock').on('value', snap => {
-                const data = snap.val();
-                stock = data ? (Array.isArray(data) ? data : Object.values(data)) : [];
+                const data = snap.val(); stock = data ? (Array.isArray(data) ? data : Object.values(data)) : [];
                 actualizarListaAdmin();
             });
-
             db.ref('pedidos').on('value', snap => {
-                const data = snap.val();
-                listaPedidos = [];
-                if(data) {
-                    for(let key in data) {
-                        let p = data[key]; p.firebaseKey = key; listaPedidos.push(p);
-                    }
-                }
-                listaPedidos.sort((a,b) => b.id - a.id); 
-                actualizarHistorialPedidos();
-                actualizarEstadisticas();
+                const data = snap.val(); listaPedidos = [];
+                if(data) { for(let key in data) { let p = data[key]; p.firebaseKey = key; listaPedidos.push(p); } }
+                listaPedidos.sort((a,b) => b.id - a.id); actualizarHistorialPedidos(); actualizarEstadisticas();
             });
         }
 
-        // --- SISTEMA DE VARIANTES ---
         function generarTablaVariantes() {
             const tallesStr = document.getElementById('admin-talles').value;
             const coloresStr = document.getElementById('admin-colores').value;
             const container = document.getElementById('tabla-variantes');
-
             const talles = tallesStr.split(',').map(t=>t.trim()).filter(t=>t!=="");
             const colores = coloresStr.split(',').map(c=>c.trim()).filter(c=>c!=="");
-
             if(talles.length === 0 || colores.length === 0) {
-                container.innerHTML = '<small style="color: #666;">Escribe los talles y colores arriba para asignar el stock...</small>';
-                return;
+                container.innerHTML = '<small style="color: #666;">Escribe los talles y colores arriba para asignar el stock...</small>'; return;
             }
-
             let html = '<label style="font-size: 0.8rem; color:#333; font-weight:bold;">Stock exacto por Combinación:</label><div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:10px;">';
             colores.forEach(color => {
                 talles.forEach(talle => {
-                    let key = `${color}-${talle}`;
-                    let stockPrevio = variantesActuales[key] || 0;
-                    html += `
-                    <div style="display:flex; justify-content:space-between; align-items:center; background:#fff; padding:8px 10px; border-radius:5px; border:1px solid #ccc;">
-                        <span style="font-size:0.85rem; color:#333; font-weight:600;">${color} <span style="color:#aaa;">|</span> ${talle}</span>
-                        <input type="number" value="${stockPrevio}" min="0" style="width:60px; padding:5px; border:1px solid #ccc; border-radius:3px; font-family:'Montserrat';" oninput="actualizarVar('${key}', this.value)">
-                    </div>`;
+                    let key = `${color}-${talle}`; let stockPrevio = variantesActuales[key] || 0;
+                    html += `<div style="display:flex; justify-content:space-between; align-items:center; background:#fff; padding:8px 10px; border-radius:5px; border:1px solid #ccc;"><span style="font-size:0.85rem; color:#333; font-weight:600;">${color} <span style="color:#aaa;">|</span> ${talle}</span><input type="number" value="${stockPrevio}" min="0" style="width:60px; padding:5px; border:1px solid #ccc; border-radius:3px; font-family:'Montserrat';" oninput="actualizarVar('${key}', this.value)"></div>`;
                 });
             });
             html += '</div>'; container.innerHTML = html;
         }
-
         function actualizarVar(key, val) { variantesActuales[key] = parseInt(val) || 0; }
 
         function guardarConfiguracion() {
-            const data = {
-                nombre: document.getElementById('conf-nombre').value,
-                whatsapp: document.getElementById('conf-wa').value,
-                instagram: document.getElementById('conf-ig').value
-            };
-            db.ref('config').set(data).then(() => alert("¡Configuración guardada en la nube!"));
+            const data = { nombre: document.getElementById('conf-nombre').value, whatsapp: document.getElementById('conf-wa').value, instagram: document.getElementById('conf-ig').value };
+            db.ref('config').set(data).then(() => alert("¡Configuración guardada!"));
+        }
+
+        // --- SISTEMA DE COMPRESIÓN AUTOMÁTICA DE FOTOS ---
+        function comprimirImagen(archivo) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        const MAX_WIDTH = 800; // Resolución ideal y liviana
+                        const MAX_HEIGHT = 800;
+                        let width = img.width;
+                        let height = img.height;
+
+                        if (width > height) {
+                            if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
+                        } else {
+                            if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
+                        }
+                        
+                        canvas.width = width; canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+                        
+                        // Devuelve la foto comprimida en formato JPEG al 60% de calidad
+                        resolve(canvas.toDataURL('image/jpeg', 0.6));
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(archivo);
+            });
         }
 
         function guardarProducto(event) {
             event.preventDefault(); 
+            const btnSubmit = document.getElementById('btn-submit-form');
+            btnSubmit.disabled = true;
+            btnSubmit.innerText = "Comprimiendo fotos y guardando... ⏳";
+
             const idEditando = document.getElementById('admin-id').value;
             const nombre = document.getElementById('admin-nombre').value;
             const precio = parseFloat(document.getElementById('admin-precio').value);
@@ -321,8 +313,7 @@
                 colores.forEach(c => {
                     talles.forEach(t => {
                         let qty = variantesActuales[`${c}-${t}`] || 0;
-                        arrVariantes.push({ color: c, talle: t, stock: qty });
-                        stockTotal += qty;
+                        arrVariantes.push({ color: c, talle: t, stock: qty }); stockTotal += qty;
                     });
                 });
 
@@ -336,37 +327,39 @@
                 } else { stock.push(productoData); }
                 
                 db.ref('stock').set(stock).then(() => {
-                    cancelarEdicion(); alert("¡Prenda guardada en internet!");
+                    cancelarEdicion(); 
+                    btnSubmit.disabled = false; btnSubmit.innerText = "Guardar en Internet";
+                    alert("¡Prenda guardada en internet!");
+                }).catch(e => {
+                    alert("⚠️ Ocurrió un error al guardar. Verifica tu conexión.");
+                    btnSubmit.disabled = false; btnSubmit.innerText = "Guardar en Internet";
                 });
             };
 
+            // Ejecuta el compresor para cada foto que elijas
             if (archivos.length > 0) {
                 let promesas = [];
                 for(let i = 0; i < archivos.length; i++) {
-                    promesas.push(new Promise(resolve => {
-                        let lector = new FileReader(); lector.onload = e => resolve(e.target.result); lector.readAsDataURL(archivos[i]);
-                    }));
+                    promesas.push(comprimirImagen(archivos[i]));
                 }
                 Promise.all(promesas).then(arrayImagenes => procesarGuardado(arrayImagenes));
             } else {
                 if (idEditando) procesarGuardado(stock.find(p => p.id == idEditando).imagenes);
-                else alert("⚠️ Tienes que subir al menos una foto.");
+                else {
+                    alert("⚠️ Tienes que subir al menos una foto.");
+                    btnSubmit.disabled = false; btnSubmit.innerText = "Guardar en Internet";
+                }
             }
         }
 
-        // --- RESTO DE FUNCIONES DE CONTROL ---
+        // --- INTERFAZ ---
         function actualizarListaCategorias() {
-            const selectCat = document.getElementById('admin-categoria');
-            selectCat.innerHTML = '<option value="">Selecciona Categoría...</option>';
+            const selectCat = document.getElementById('admin-categoria'); selectCat.innerHTML = '<option value="">Selecciona Categoría...</option>';
             for(let cat in categoriasObj) { selectCat.innerHTML += `<option value="${cat}">${cat.charAt(0).toUpperCase() + cat.slice(1)}</option>`; }
-            actualizarSelectSubcategorias(); 
-            const contenedor = document.getElementById('contenedor-categorias'); contenedor.innerHTML = '';
+            actualizarSelectSubcategorias(); const contenedor = document.getElementById('contenedor-categorias'); contenedor.innerHTML = '';
             for(let cat in categoriasObj) {
                 let subsVisibles = categoriasObj[cat].filter(s => s !== "");
-                let subsHTML = subsVisibles.map(sub => {
-                    let idxReal = categoriasObj[cat].indexOf(sub);
-                    return `<span class="tag-cat">${sub} <button onclick="eliminarSubcategoria('${cat}', ${idxReal})">✖</button></span>`;
-                }).join('');
+                let subsHTML = subsVisibles.map(sub => { let idxReal = categoriasObj[cat].indexOf(sub); return `<span class="tag-cat">${sub} <button onclick="eliminarSubcategoria('${cat}', ${idxReal})">✖</button></span>`; }).join('');
                 contenedor.innerHTML += `<div class="cat-box"><div class="cat-header"><span class="cat-title">${cat}</span><button class="cat-delete-btn" onclick="eliminarCategoria('${cat}')">Borrar</button></div><div class="tags-categorias">${subsHTML}</div><div class="subcat-input-group"><input type="text" id="nueva-sub-${cat}" class="subcat-input" placeholder="Agregar subcategoría"><button class="subcat-add-btn" onclick="agregarSubcategoria('${cat}')">Añadir</button></div></div>`;
             }
         }
