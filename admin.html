@@ -8,21 +8,23 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-storage-compat.js"></script>
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap');
+        :root { --color-main: #E74C3C; }
         body { font-family: 'Montserrat', sans-serif; background-color: #222; color: #fff; margin: 0; padding: 20px; }
         header { text-align: center; margin-bottom: 20px; position: relative;}
-        header h1 { color: #ffb3ba; margin: 0;}
+        header h1 { color: var(--color-main); margin: 0;}
         .enlace-tienda { display: inline-block; margin-top: 10px; color: #aaa; text-decoration: none; border-bottom: 1px solid #aaa; padding-bottom: 2px;}
         .enlace-tienda:hover { color: white; border-color: white;}
         
-        .login-box { max-width: 400px; margin: 100px auto; background: #333; padding: 40px; border-radius: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); text-align: center; border-top: 5px solid #ffb3ba;}
-        .login-box h2 { margin-top: 0; color: #ffb3ba; margin-bottom: 25px;}
+        .login-box { max-width: 400px; margin: 100px auto; background: #333; padding: 40px; border-radius: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); text-align: center; border-top: 5px solid var(--color-main);}
+        .login-box h2 { margin-top: 0; color: var(--color-main); margin-bottom: 25px;}
         .login-box input { width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 5px; border: none; font-family: 'Montserrat'; box-sizing: border-box; background: #eee;}
         
         .stats-container { max-width: 1300px; margin: 0 auto 20px auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
-        .stat-card { background: #333; padding: 20px; border-radius: 10px; border-left: 5px solid #ffb3ba; text-align: center;}
+        .stat-card { background: #333; padding: 20px; border-radius: 10px; border-left: 5px solid var(--color-main); text-align: center;}
         .stat-card h4 { margin: 0; color: #aaa; font-weight: 400; font-size: 0.9rem; text-transform: uppercase;}
         .stat-card p { margin: 10px 0 0 0; font-size: 2rem; font-weight: 700; color: #fff; }
 
@@ -30,16 +32,16 @@
         .admin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; align-items: start;}
         @media (max-width: 900px) { .admin-grid { grid-template-columns: 1fr; } }
         .admin-card { background: #444; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
-        h3 { margin-top: 0; color: #ffb3ba; border-bottom: 1px solid #555; padding-bottom: 10px;}
+        h3 { margin-top: 0; color: var(--color-main); border-bottom: 1px solid #555; padding-bottom: 10px;}
         
         .form-grid { display: grid; grid-template-columns: 1fr; gap: 15px; margin-bottom: 15px; }
         .form-grid input, .form-grid select { padding: 12px; border-radius: 5px; border: none; font-family: 'Montserrat', sans-serif; background: #eee; color: #333; }
-        .btn-accion { background-color: #ffb3ba; color: #333; border: none; padding: 12px 15px; border-radius: 5px; font-weight: bold; cursor: pointer; transition: background 0.3s; text-transform: uppercase;}
-        .btn-accion:hover:not(:disabled) { background-color: #ffc2c9; }
+        .btn-accion { background-color: var(--color-main); color: #111; border: none; padding: 12px 15px; border-radius: 5px; font-weight: bold; cursor: pointer; transition: opacity 0.3s; text-transform: uppercase;}
+        .btn-accion:hover:not(:disabled) { opacity: 0.8; }
         .btn-accion:disabled { background-color: #555; color: #aaa; cursor: not-allowed; }
         
         .lista-admin-items { max-height: 500px; overflow-y: auto; padding-right: 10px;}
-        .admin-item { display: flex; justify-content: space-between; align-items: center; background: #555; padding: 15px; margin-bottom: 10px; border-radius: 5px; border-left: 4px solid #ffb3ba;}
+        .admin-item { display: flex; justify-content: space-between; align-items: center; background: #555; padding: 15px; margin-bottom: 10px; border-radius: 5px; border-left: 4px solid var(--color-main);}
         .admin-item.agotado { border-left-color: #e74c3c; opacity: 0.7;}
         .admin-item-btns button { padding: 8px 12px; border: none; border-radius: 3px; cursor: pointer; margin-left: 5px; font-weight: bold; font-family: 'Montserrat', sans-serif;}
         .btn-edit { background-color: #f1c40f; color: #333; }
@@ -48,17 +50,17 @@
         
         .cat-box { background: #555; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
         .cat-header { display: flex; justify-content: space-between; margin-bottom: 10px; align-items: center; }
-        .cat-title { color: #ffb3ba; font-size: 1.1rem; text-transform: uppercase; font-weight: bold; }
+        .cat-title { color: var(--color-main); font-size: 1.1rem; text-transform: uppercase; font-weight: bold; }
         .cat-delete-btn { background: #e74c3c; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold;}
         .tags-categorias { display: flex; flex-wrap: wrap; gap: 8px; }
         .tag-cat { background: #333; padding: 5px 10px; border-radius: 15px; font-size: 0.85rem; display: flex; align-items: center; gap: 5px;}
-        .tag-cat button { background: none; border: none; color: #ffb3ba; cursor: pointer; font-weight: bold;}
+        .tag-cat button { background: none; border: none; color: var(--color-main); cursor: pointer; font-weight: bold;}
         .subcat-input-group { display: flex; gap: 10px; margin-top: 10px;}
         .subcat-input { padding: 8px; flex: 1; border-radius: 4px; border: none; font-family: 'Montserrat', sans-serif; background: #eee; }
         .subcat-add-btn { background: #333; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold;}
 
         .pedido-card { background: #555; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 5px solid #2ecc71; }
-        .pedido-header { display: flex; justify-content: space-between; border-bottom: 1px solid #666; padding-bottom: 10px; margin-bottom: 10px;}
+        .pedido-header { display: flex; justify-content: space-between; border-bottom: 1px solid #666; padding-bottom: 10px; margin-bottom: 10px; align-items: center;}
         .pedido-fecha { font-size: 0.85rem; color: #ccc; }
         .pedido-cliente { font-size: 1rem; margin: 5px 0; color: #fff;}
         .pedido-datos { font-size: 0.85rem; color: #ddd; margin-bottom: 15px; line-height: 1.4;}
@@ -66,9 +68,10 @@
         .pedido-item-img { width: 40px; height: 50px; object-fit: cover; border-radius: 3px;}
         .pedido-item-info strong { font-size: 0.9rem; display: block; color: #fff;}
         .pedido-item-info span { color: #ccc; font-size: 0.8rem;}
-        .pedido-item-cant { font-weight: bold; color: #ffb3ba; font-size: 0.95rem;}
+        .pedido-item-cant { font-weight: bold; color: var(--color-main); font-size: 0.95rem;}
         .pedido-total { font-weight: bold; font-size: 1.1rem; color: #2ecc71; text-align: right; margin-top:10px;}
-        .btn-borrar-pedido { background: #e74c3c; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; font-size: 0.8rem;}
+        .btn-borrar-pedido { border: none; padding: 6px 12px; border-radius: 3px; cursor: pointer; font-size: 0.8rem; font-weight: bold; font-family: 'Montserrat'; transition: opacity 0.3s;}
+        .btn-borrar-pedido:hover { opacity: 0.8; }
         
         .conexion-status { position: fixed; top: 10px; right: 10px; background: #f1c40f; color: #333; padding: 5px 10px; border-radius: 5px; font-weight: bold; font-size: 0.8rem; z-index: 1000;}
         .tabla-var-container { background: #eee; padding: 15px; border-radius: 5px; margin-bottom: 15px; }
@@ -132,12 +135,20 @@
                     </div>
                     
                     <div class="admin-card">
-                        <h3>Datos Generales y Contacto</h3>
+                        <h3>Identidad y Configuración</h3>
                         <div class="form-grid">
+                            <label style="font-size: 0.8rem; color:#aaa; margin-bottom:-10px;">Nombre y Contacto:</label>
                             <input type="text" id="conf-nombre" placeholder="Nombre de tu Tienda">
                             <input type="number" id="conf-wa" placeholder="WhatsApp (Ej: 5493863509500)">
                             <input type="url" id="conf-ig" placeholder="Enlace de Instagram">
-                            <button class="btn-accion" onclick="guardarConfiguracion()">Guardar Configuración</button>
+                            
+                            <label style="font-size: 0.8rem; color:#aaa; margin-top:10px; margin-bottom:-10px;">Logo de la Tienda (JPG o PNG):</label>
+                            <input type="file" id="conf-logo" accept="image/*">
+                            
+                            <label style="font-size: 0.8rem; color:#aaa; margin-top:10px; margin-bottom:-10px;">Color Principal de tu Marca:</label>
+                            <input type="color" id="conf-color" value="#E74C3C" style="height: 40px; cursor: pointer; padding: 2px;">
+
+                            <button class="btn-accion" id="btn-guardar-conf" onclick="guardarConfiguracion()">Guardar Diseño y Datos</button>
                         </div>
                     </div>
 
@@ -179,8 +190,9 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
         const auth = firebase.auth();
+        const storage = firebase.storage();
 
-        let configTienda = { nombre: "", whatsapp: "", instagram: "" };
+        let configTienda = { nombre: "", whatsapp: "", instagram: "", color: "#E74C3C", logo: "" };
         let stock = [];
         let categoriasObj = {};
         let listaPedidos = [];
@@ -218,6 +230,8 @@
                     document.getElementById('conf-nombre').value = configTienda.nombre || "";
                     document.getElementById('conf-wa').value = configTienda.whatsapp || "";
                     document.getElementById('conf-ig').value = configTienda.instagram || "";
+                    document.getElementById('conf-color').value = configTienda.color || "#E74C3C";
+                    document.documentElement.style.setProperty('--color-main', configTienda.color || '#E74C3C');
                 }
             });
             db.ref('categoriasObj').on('value', snap => {
@@ -256,11 +270,37 @@
         function actualizarVar(key, val) { variantesActuales[key] = parseInt(val) || 0; }
 
         function guardarConfiguracion() {
-            const data = { nombre: document.getElementById('conf-nombre').value, whatsapp: document.getElementById('conf-wa').value, instagram: document.getElementById('conf-ig').value };
-            db.ref('config').set(data).then(() => alert("¡Configuración guardada!"));
+            const btn = document.getElementById('btn-guardar-conf');
+            btn.innerText = "Guardando...";
+            btn.disabled = true;
+
+            const data = { 
+                nombre: document.getElementById('conf-nombre').value, 
+                whatsapp: document.getElementById('conf-wa').value, 
+                instagram: document.getElementById('conf-ig').value,
+                color: document.getElementById('conf-color').value,
+                logo: configTienda.logo || ""
+            };
+
+            const archivoLogo = document.getElementById('conf-logo').files[0];
+
+            if (archivoLogo) {
+                let ruta = storage.ref().child(`identidad/logo_${Date.now()}`);
+                ruta.put(archivoLogo).then(snap => snap.ref.getDownloadURL()).then(url => {
+                    data.logo = url;
+                    db.ref('config').set(data).then(() => { 
+                        btn.innerText = "Guardar Diseño y Datos"; btn.disabled = false; alert("¡Diseño e Identidad guardados!"); 
+                    });
+                }).catch(e => {
+                    alert("Error al subir el logo."); btn.innerText = "Guardar Diseño y Datos"; btn.disabled = false;
+                });
+            } else {
+                db.ref('config').set(data).then(() => { 
+                    btn.innerText = "Guardar Diseño y Datos"; btn.disabled = false; alert("¡Diseño e Identidad guardados!"); 
+                });
+            }
         }
 
-        // --- SISTEMA DE COMPRESIÓN AUTOMÁTICA DE FOTOS ---
         function comprimirImagen(archivo) {
             return new Promise((resolve) => {
                 const reader = new FileReader();
@@ -268,22 +308,12 @@
                     const img = new Image();
                     img.onload = () => {
                         const canvas = document.createElement('canvas');
-                        const MAX_WIDTH = 800; // Resolución ideal y liviana
-                        const MAX_HEIGHT = 800;
-                        let width = img.width;
-                        let height = img.height;
-
-                        if (width > height) {
-                            if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
-                        } else {
-                            if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
-                        }
-                        
+                        const MAX_WIDTH = 800; const MAX_HEIGHT = 800;
+                        let width = img.width; let height = img.height;
+                        if (width > height) { if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; } } 
+                        else { if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; } }
                         canvas.width = width; canvas.height = height;
-                        const ctx = canvas.getContext('2d');
-                        ctx.drawImage(img, 0, 0, width, height);
-                        
-                        // Devuelve la foto comprimida en formato JPEG al 60% de calidad
+                        const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, width, height);
                         resolve(canvas.toDataURL('image/jpeg', 0.6));
                     };
                     img.src = e.target.result;
@@ -295,8 +325,7 @@
         function guardarProducto(event) {
             event.preventDefault(); 
             const btnSubmit = document.getElementById('btn-submit-form');
-            btnSubmit.disabled = true;
-            btnSubmit.innerText = "Comprimiendo fotos y guardando... ⏳";
+            btnSubmit.disabled = true; btnSubmit.innerText = "Comprimiendo fotos y guardando... ⏳";
 
             const idEditando = document.getElementById('admin-id').value;
             const nombre = document.getElementById('admin-nombre').value;
@@ -311,10 +340,7 @@
             const procesarGuardado = (arrayImagenes) => {
                 let arrVariantes = []; let stockTotal = 0;
                 colores.forEach(c => {
-                    talles.forEach(t => {
-                        let qty = variantesActuales[`${c}-${t}`] || 0;
-                        arrVariantes.push({ color: c, talle: t, stock: qty }); stockTotal += qty;
-                    });
+                    talles.forEach(t => { let qty = variantesActuales[`${c}-${t}`] || 0; arrVariantes.push({ color: c, talle: t, stock: qty }); stockTotal += qty; });
                 });
 
                 const productoData = {
@@ -327,32 +353,21 @@
                 } else { stock.push(productoData); }
                 
                 db.ref('stock').set(stock).then(() => {
-                    cancelarEdicion(); 
-                    btnSubmit.disabled = false; btnSubmit.innerText = "Guardar en Internet";
-                    alert("¡Prenda guardada en internet!");
+                    cancelarEdicion(); btnSubmit.disabled = false; btnSubmit.innerText = "Guardar en Internet"; alert("¡Prenda guardada en internet!");
                 }).catch(e => {
-                    alert("⚠️ Ocurrió un error al guardar. Verifica tu conexión.");
-                    btnSubmit.disabled = false; btnSubmit.innerText = "Guardar en Internet";
+                    alert("⚠️ Ocurrió un error al guardar."); btnSubmit.disabled = false; btnSubmit.innerText = "Guardar en Internet";
                 });
             };
 
-            // Ejecuta el compresor para cada foto que elijas
             if (archivos.length > 0) {
-                let promesas = [];
-                for(let i = 0; i < archivos.length; i++) {
-                    promesas.push(comprimirImagen(archivos[i]));
-                }
+                let promesas = []; for(let i = 0; i < archivos.length; i++) { promesas.push(comprimirImagen(archivos[i])); }
                 Promise.all(promesas).then(arrayImagenes => procesarGuardado(arrayImagenes));
             } else {
                 if (idEditando) procesarGuardado(stock.find(p => p.id == idEditando).imagenes);
-                else {
-                    alert("⚠️ Tienes que subir al menos una foto.");
-                    btnSubmit.disabled = false; btnSubmit.innerText = "Guardar en Internet";
-                }
+                else { alert("⚠️ Tienes que subir al menos una foto."); btnSubmit.disabled = false; btnSubmit.innerText = "Guardar en Internet"; }
             }
         }
 
-        // --- INTERFAZ ---
         function actualizarListaCategorias() {
             const selectCat = document.getElementById('admin-categoria'); selectCat.innerHTML = '<option value="">Selecciona Categoría...</option>';
             for(let cat in categoriasObj) { selectCat.innerHTML += `<option value="${cat}">${cat.charAt(0).toUpperCase() + cat.slice(1)}</option>`; }
@@ -386,6 +401,8 @@
             let ingresos = listaPedidos.reduce((sum, p) => sum + p.total, 0);
             document.getElementById('stat-pedidos').innerText = listaPedidos.length; document.getElementById('stat-ingresos').innerText = `$${ingresos.toLocaleString('es-AR')}`; document.getElementById('stat-prendas').innerText = stock.length;
         }
+
+        // --- FUNCIÓN DE HISTORIAL DE PEDIDOS MODIFICADA PARA NUEVA ENTREGA ---
         function actualizarHistorialPedidos() {
             const contenedor = document.getElementById('lista-pedidos'); if (listaPedidos.length === 0) { contenedor.innerHTML = '<p style="color:#aaa;">No hay pedidos recientes.</p>'; return; }
             contenedor.innerHTML = '';
@@ -397,10 +414,60 @@
                         itemsHTML += `<div class="pedido-item-detalle">${imgTag}<div class="pedido-item-info"><strong>${item.nombre}</strong><span>Talle: ${item.talle} | ${item.color}</span></div><div class="pedido-item-cant">x${item.cantidad}</div></div>`;
                     });
                 }
-                contenedor.innerHTML += `<div class="pedido-card"><div class="pedido-header"><span>📅 ${pedido.fecha}</span><button class="btn-borrar-pedido" onclick="eliminarPedido('${pedido.firebaseKey}')">Entregado ✖</button></div><h4 class="pedido-cliente">👤 ${pedido.cliente.nombre} (${pedido.cliente.telefono})</h4><div class="pedido-datos">📍 ${pedido.cliente.domicilio} | 💳 ${pedido.cliente.pago}</div><div>${itemsHTML}</div><div class="pedido-total">Total: $${pedido.total.toLocaleString('es-AR')}</div></div>`;
+
+                // NUEVA LÓGICA: Leer formato de entrega
+                let detallesEnvio = pedido.cliente.entrega || "Retiro en sucursal";
+                if (pedido.cliente.entrega === 'Envío a domicilio') {
+                    detallesEnvio += ` - ${pedido.cliente.direccion || ''}, ${pedido.cliente.localidad || ''}, ${pedido.cliente.provincia || ''} (CP: ${pedido.cliente.cp || ''})`;
+                }
+                // Fallback para pedidos viejos que usaban "domicilio"
+                if (!pedido.cliente.entrega && pedido.cliente.domicilio) {
+                    detallesEnvio = pedido.cliente.domicilio;
+                }
+
+                contenedor.innerHTML += `
+                    <div class="pedido-card">
+                        <div class="pedido-header">
+                            <span>📅 ${pedido.fecha}</span>
+                            <div style="display:flex; gap:5px;">
+                                <button class="btn-borrar-pedido" style="background-color: #2ecc71; color: white;" onclick="ventaExitosa('${pedido.firebaseKey}')">✅ Venta Exitosa</button>
+                                <button class="btn-borrar-pedido" style="background-color: #e74c3c; color: white;" onclick="cancelarYDevolverStock('${pedido.firebaseKey}')">❌ Cancelar y Devolver Stock</button>
+                            </div>
+                        </div>
+                        <h4 class="pedido-cliente">👤 ${pedido.cliente.nombre} (${pedido.cliente.telefono})</h4>
+                        <div class="pedido-datos">📍 ${detallesEnvio} | 💳 ${pedido.cliente.pago}</div>
+                        <div>${itemsHTML}</div>
+                        <div class="pedido-total">Total: $${pedido.total.toLocaleString('es-AR')}</div>
+                    </div>`;
             });
         }
-        function eliminarPedido(firebaseKey) { if(confirm("¿Marcar como entregado?")) { db.ref('pedidos/' + firebaseKey).remove(); } }
+
+        function ventaExitosa(firebaseKey) { 
+            if(confirm("¿Marcar venta como completada y borrar de la lista? (El stock ya se descontó automáticamente cuando el cliente armó el pedido).")) { 
+                db.ref('pedidos/' + firebaseKey).remove(); 
+            } 
+        }
+
+        function cancelarYDevolverStock(firebaseKey) {
+            if(confirm("¿Estás segura? Esto borrará el pedido de la lista y DEVOLVERÁ las prendas al stock de tu tienda para que otro pueda comprarlas.")) {
+                let pedido = listaPedidos.find(p => p.firebaseKey === firebaseKey);
+                if(pedido && pedido.items) {
+                    pedido.items.forEach(itemCarrito => {
+                        let productoOriginal = stock.find(p => p.id === itemCarrito.id);
+                        if (productoOriginal && productoOriginal.variantes) {
+                            let variante = productoOriginal.variantes.find(v => v.color === itemCarrito.color && v.talle === itemCarrito.talle);
+                            if(variante) {
+                                variante.stock += itemCarrito.cantidad;
+                            }
+                            productoOriginal.stock = productoOriginal.variantes.reduce((sum, v) => sum + v.stock, 0);
+                        }
+                    });
+                    db.ref('stock').set(stock);
+                }
+                db.ref('pedidos/' + firebaseKey).remove();
+            }
+        }
+
         function actualizarListaAdmin() {
             const lista = document.getElementById('lista-admin'); lista.innerHTML = ''; if(stock.length === 0) { lista.innerHTML = `<p style="color:#aaa;">Aún no has subido ropa.</p>`; return; }
             stock.forEach(prod => {
